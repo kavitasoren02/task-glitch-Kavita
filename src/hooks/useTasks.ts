@@ -19,6 +19,8 @@ interface UseTasksState {
   derivedSorted: DerivedTask[];
   metrics: Metrics;
   lastDeleted: Task | null;
+  // Clear the last deleted task (called when undo window closes)
+  clearLastDeleted: () => void;
   addTask: (task: Omit<Task, 'id'> & { id?: string }) => void;
   updateTask: (id: string, patch: Partial<Task>) => void;
   deleteTask: (id: string) => void;
@@ -147,13 +149,17 @@ export function useTasks(): UseTasksState {
     });
   }, []);
 
+  const clearLastDeleted = useCallback(() => {
+    setLastDeleted(null);
+  }, []);
+
   const undoDelete = useCallback(() => {
     if (!lastDeleted) return;
     setTasks(prev => [...prev, lastDeleted]);
     setLastDeleted(null);
   }, [lastDeleted]);
 
-  return { tasks, loading, error, derivedSorted, metrics, lastDeleted, addTask, updateTask, deleteTask, undoDelete };
+  return { tasks, loading, error, derivedSorted, metrics, lastDeleted, clearLastDeleted, addTask, updateTask, deleteTask, undoDelete };
 }
 
 
