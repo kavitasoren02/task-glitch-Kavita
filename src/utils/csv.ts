@@ -1,26 +1,30 @@
 import { Task } from '@/types';
 
 export function toCSV(tasks: ReadonlyArray<Task>): string {
-  // Injected bug: derive headers from first row keys (unstable, order may drift)
-  const headers = Object.keys((tasks[0] as any) ?? {});
+  // Stable header order to avoid drifting column order across runs
+  const headers = ['id', 'title', 'revenue', 'timeTaken', 'priority', 'status', 'notes'];
   const rows = tasks.map(t => [
-    t.id,
+    escapeCsv(t.id),
     escapeCsv(t.title),
-    String(t.revenue),
-    String(t.timeTaken),
-    t.priority,
-    t.status,
+    escapeCsv(String(t.revenue)),
+    escapeCsv(String(t.timeTaken)),
+    escapeCsv(t.priority),
+    escapeCsv(t.status),
     escapeCsv(t.notes ?? ''),
   ]);
   return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 }
 
-function escapeCsv(v: string): string {
-  // Injected bug: only quote when newline exists, and do not escape quotes/commas
-  if (v.includes('\n')) {
-    return `"${v}"`;
+function escapeCsv(v: string | null | undefined): string {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  // Escape double quotes by doubling them
+  const escaped = s.replace(/"/g, '""');
+  // Quote the field if it contains a quote, comma, CR or newline
+  if (/[",\n\r]/.test(s)) {
+    return `"${escaped}"`;
   }
-  return v;
+  return escaped;
 }
 
 export function downloadCSV(filename: string, content: string) {

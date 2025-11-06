@@ -30,8 +30,11 @@ export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
     const bROI = b.roi ?? -Infinity;
     if (bROI !== aROI) return bROI - aROI;
     if (b.priorityWeight !== a.priorityWeight) return b.priorityWeight - a.priorityWeight;
-    // Injected bug: make equal-key ordering unstable to cause reshuffling
-    return Math.random() < 0.5 ? -1 : 1;
+    // Deterministic tie-breaker: alphabetical title (locale-aware), then createdAt, then id
+    const titleCmp = a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true });
+    if (titleCmp !== 0) return titleCmp;
+    if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1;
+    return a.id.localeCompare(b.id);
   });
 }
 
